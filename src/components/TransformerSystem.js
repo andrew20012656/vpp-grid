@@ -4,7 +4,7 @@ import { Transformer } from "./transformer";
 import { Wire } from "./Wire";
 import { Vector3 } from "three";
 
-function TransformerGroup({ x, z }) {
+function TransformerGroup({ x, z, flowDirection=1}) {
   const fbx = useLoader(FBXLoader, "/models/transformer-rack.FBX");
 
   return (
@@ -28,6 +28,8 @@ function TransformerGroup({ x, z }) {
             new Vector3(x - 3, 10, z - 2.7),
           ]}
           radius={0.04}
+          animated={true}
+          flowDirection={flowDirection}
         />
         <Wire
           points={[
@@ -36,6 +38,8 @@ function TransformerGroup({ x, z }) {
             new Vector3(x -0.6, 10, z - 2.7),
           ]}
           radius={0.04}
+          animated={true}
+          flowDirection={flowDirection}
         />
         <Wire
           points={[
@@ -44,6 +48,8 @@ function TransformerGroup({ x, z }) {
             new Vector3(x +1.25, 10, z - 2.7),
           ]}
           radius={0.04}
+          animated={true}
+          flowDirection={flowDirection}
         />
         <Wire
           points={[
@@ -52,17 +58,19 @@ function TransformerGroup({ x, z }) {
             new Vector3(x - 1.5, 10, z - 2.7),
           ]}
           radius={0.04}
+          animated={true}
+          flowDirection={flowDirection}
         />
       </group>
     </>
   );
 }
 
-export function TransformerGroupSystem({ startX, z, gap }) {
+export function TransformerGroupSystem({ startX, z, gap, flowDirection=1}) {
   return (
     <group>
       {[...Array(6)].map((_, index) => (
-        <TransformerGroup key={index} x={startX - index * gap} z={z} />
+        <TransformerGroup key={index} x={startX - index * gap} z={z} flowDirection={flowDirection}/>
       ))}
     </group>
   );

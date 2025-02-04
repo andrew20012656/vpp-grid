@@ -1,0 +1,47 @@
+
+.grid-card {
+  background: rgba(0, 0, 0, 0.7);
+  border: 1px solid #ff9800;
+  border-radius: 4px;
+  width: 300px;
+  padding: 15px;
+  margin-top: 10px;
+}
+
+.grid-card .card-title {
+  border-bottom: 1px solid #ff9800;
+  padding-bottom: 10px;
+  margin-bottom: 15px;
+}
+
+.grid-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 15px;
+  height: 30px;
+}
+
+.grid-item .item-label {
+  display: flex;
+  align-items: center;
+  color: #ff9800;
+  font-weight: bold;
+  font-size: 18px;
+}
+
+.grid-item .item-label img {
+  width: 42px;
+  height: 42px;
+  margin-right: 18px;
+}
+
+.grid-item .value-number {
+  color: #ffd54f;
+  font-size: 20px;
+}
+
+.grid-item .value-unit, 
+.grid-card .title-content {
+  color: #ff9800;
+}
