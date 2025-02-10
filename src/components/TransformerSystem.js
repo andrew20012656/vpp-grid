@@ -1,7 +1,7 @@
 import { useLoader } from "@react-three/fiber";
 import { FBXLoader } from "three/examples/jsm/loaders/FBXLoader";
 import { Transformer } from "./transformer";
-import { Wire } from "./Wire";
+import { Wire } from "./common/Wire";
 import { Vector3 } from "three";
 
 function TransformerGroup({ x, z, flowDirection=1}) {

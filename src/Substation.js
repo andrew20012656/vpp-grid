@@ -9,18 +9,20 @@ import { useLoader, useFrame } from "@react-three/fiber";
 import { useMemo, useState, useEffect, useRef } from "react";
 import { FBXLoader } from "three/examples/jsm/loaders/FBXLoader";
 import { TransformerGroupSystem } from "./components/TransformerSystem";
-import { Wire } from "./components/Wire";
+import { Wire } from "./components/common/Wire";
 import { BessContainer } from "./components/BessContainer";
 import {
   Sky,
 } from "@react-three/drei";
 import * as THREE from "three";
 import "./styles.css"; // You'll need to create this file
-import EquipmentStatus from "./components/EquipmentStatus";
-import BessStatus from "./components/BessStatus";
-import GridStatus from './components/GridStatus';
+import EquipmentStatus from "./components/dashboard/EquipmentStatus";
+import BessStatus from "./components/dashboard/BessStatus";
+import GridStatus from './components/dashboard/GridStatus';
 import { useCameraTour } from './components/CameraTour';
 import { useAutoReset } from './hooks/useAutoReset';
+import { SolarArray } from './components/solar/SolarArray';
+import { Dashboard } from "./components/dashboard/Dashboard";
 
 function HighVoltageIsolationGroup({ x, z, endZ }) {
   const fbx = useLoader(FBXLoader, "/models/isolation.FBX");
@@ -250,211 +252,150 @@ function Rack() {
 
 function BessContainerGroup({ startX, startZ }) {
   const containerSpacingX = 30;
+  const containerSpacingZ = 20;
 
   return (
     <group>
-      {[0, 1, 2, 3, 4, 5].map((index) => (
-        <BessContainer
-          key={`bess-${index}`}
-          name={`BESS Container ${index + 1}`}
-          position={[startX + index * containerSpacingX, 4, startZ]}
-          rotation={[0, Math.PI, 0]}
-          scale={[0.01, 0.01, 0.01]}
+      {[0, 1].map((row) => (
+        [0, 1, 2].map((col) => (
+          <BessContainer
+            key={`bess-${row}-${col}`}
+            name={`BESS Container ${row * 3 + col + 1}`}
+            position={[
+              startX + col * containerSpacingX, 
+              4, 
+              startZ + row * containerSpacingZ
+            ]}
+            rotation={[0, Math.PI, 0]}
+            scale={[0.01, 0.01, 0.01]}
+          />
+        ))
+      ))}
+    </group>
+  );
+}
+
+function TransformerToBessWires({ transformerStartX, transformerZ, bessStartX, bessZ, flowDirection = 1 }) {
+  const transformerSpacing = 40;
+  const containerSpacingX = 30;
+  const containerSpacingZ = 20;
+  
+  return (
+    <group>
+      {/* Connect transformers 4-6 (indices 3-5) to BESS containers */}
+      {[3, 4, 5].map((transformerIndex) => {
+        const transformerPos = new Vector3(
+          transformerStartX + (transformerIndex * 20), 
+          6, 
+          transformerZ
+        );
+        
+        // Each transformer connects to two adjacent BESS containers
+        const bessIndex = transformerIndex - 3; // Map 3,4,5 to 0,1,2 for BESS connections
+        return [0, 1].map((row) => {
+          const bessPos = new Vector3(
+            10 + (bessIndex * containerSpacingX),
+            4,
+            0 + (row * containerSpacingZ)
+          );
+          
+          const midPoint1 = new Vector3(
+            transformerPos.x,
+            transformerPos.y + 2,
+            transformerPos.z + 10
+          );
+          
+          const midPoint2 = new Vector3(
+            (transformerPos.x + bessPos.x) / 2,
+            5,
+            (transformerPos.z + bessPos.z) / 2
+          );
+
+          return (
+            <group key={`transformer-bess-wire-${transformerIndex}-${row}`}>
+              <Wire
+                points={[transformerPos, midPoint1, midPoint2, bessPos]}
+                radius={0.08}
+                animated={true}
+                flowDirection={flowDirection}
+              />
+              {[-0.8, 0.8].map((offset, i) => (
+                <Wire
+                  key={`side-wire-${i}`}
+                  points={[
+                    new Vector3(transformerPos.x + offset, transformerPos.y, transformerPos.z),
+                    new Vector3(midPoint1.x + offset, midPoint1.y, midPoint1.z),
+                    new Vector3(midPoint2.x + offset, midPoint2.y, midPoint2.z),
+                    new Vector3(bessPos.x + offset, bessPos.y, bessPos.z)
+                  ]}
+                  radius={0.08}
+                  animated={true}
+                  flowDirection={flowDirection}
+                />
+              ))}
+            </group>
+          );
+        });
+      })}
+    </group>
+  );
+}
+
+// Add this configuration near the Platform component
+const ISOLATION_GROUP_CONFIG = {
+  startX: 62, // leftmost X position
+  startZ: -65,
+  spacing: 21, // gap between groups
+  count: 6, // total number of groups
+  transformerZ: -30 // target Z position for wires
+};
+
+function SolarToTransformerWires({ solarStartX, solarStartZ, transformerStartX, transformerZ }) {
+  const trunkHeight = 8;
+  const branchHeight = 6;
+  
+  return (
+    <group>
+      {/* Main trunk wire running parallel to solar arrays */}
+      <Wire
+        points={[
+          new Vector3(solarStartX - 5, trunkHeight, solarStartZ + 15),
+          new Vector3(solarStartX + 55, trunkHeight, solarStartZ + 15),
+        ]}
+        radius={0.12}
+        animated={true}
+      />
+
+      {/* Branch wires connecting solar arrays to trunk */}
+      {[0, 1, 2].map((row) => (
+        <Wire
+          key={`solar-branch-${row}`}
+          points={[
+            new Vector3(solarStartX + (row * 20), branchHeight, solarStartZ),
+            new Vector3(solarStartX + (row * 20), trunkHeight, solarStartZ + 15),
+          ]}
+          radius={0.08}
+          animated={true}
+        />
+      ))}
+
+      {/* Connection wires from trunk to first three transformers */}
+      {[0, 1, 2].map((index) => (
+        <Wire
+          key={`trunk-transformer-${index}`}
+          points={[
+            new Vector3(solarStartX + (index * 20), trunkHeight, solarStartZ + 15),
+            new Vector3(transformerStartX + (index * 20), 6, transformerZ),
+          ]}
+          radius={0.1}
+          animated={true}
         />
       ))}
     </group>
   );
 }
 
-function SolarPanel({ scale = 1 }) {
-  const baseWidth = 4.5;
-  const baseHeight = 0.15;
-  const baseDepth = 2.25;
-
-  // Grid configuration
-  const gridRows = 4;
-  const gridCols = 8;
-  const gridLineWidth = 0.04;
-
-  const gridMaterial = (
-    <meshPhongMaterial
-      color="#444444"
-      specular="#ffffff"
-      shininess={100}
-      metalness={0.9}
-      reflectivity={1}
-    />
-  );
-
-  return (
-    <group>
-      {/* Panel frame */}
-      <mesh>
-        <boxGeometry
-          args={[baseWidth * scale, baseHeight * scale, baseDepth * scale]}
-        />
-        <meshPhongMaterial color="#666666" />
-      </mesh>
-
-      {/* Solar cell surface */}
-      <group position={[0, (baseHeight / 2) * scale, 0]}>
-        {/* Base surface */}
-        <mesh>
-          <boxGeometry
-            args={[
-              baseWidth * 0.97 * scale,
-              (baseHeight / 2) * scale,
-              baseDepth * 0.93 * scale,
-            ]}
-          />
-          <meshPhongMaterial
-            color="#1a237e"
-            shininess={100}
-            specular="#444444"
-          />
-        </mesh>
-
-        {/* Horizontal grid lines */}
-        {Array.from({ length: gridRows - 1 }).map((_, i) => (
-          <mesh
-            key={`h-${i}`}
-            position={[
-              0,
-              (baseHeight / 2) * scale + 0.001,
-              -baseDepth * 0.93 * scale * 0.5 +
-                ((baseDepth * 0.93 * scale) / gridRows) * (i + 1),
-            ]}
-          >
-            <boxGeometry
-              args={[baseWidth * 0.97 * scale, 0.002, gridLineWidth * scale]}
-            />
-            {gridMaterial}
-          </mesh>
-        ))}
-
-        {/* Vertical grid lines */}
-        {Array.from({ length: gridCols - 1 }).map((_, i) => (
-          <mesh
-            key={`v-${i}`}
-            position={[
-              -baseWidth * 0.97 * scale * 0.5 +
-                ((baseWidth * 0.97 * scale) / gridCols) * (i + 1),
-              (baseHeight / 2) * scale + 0.001,
-              0,
-            ]}
-          >
-            <boxGeometry
-              args={[gridLineWidth * scale, 0.002, baseDepth * 0.93 * scale]}
-            />
-            {gridMaterial}
-          </mesh>
-        ))}
-      </group>
-    </group>
-  );
-}
-
-function SolarArray({
-  rows = 8,
-  cols = 12,
-  startX = 0,
-  startZ = 0,
-  scale = 1,
-  gapX = 5,
-  gapZ = 2.7,
-}) {
-  const tiltAngle = -Math.PI / 6;
-  const heightOffset = 1.0;
-
-  const panels = [];
-  for (let row = 0; row < rows; row++) {
-    for (let col = 0; col < cols; col++) {
-      panels.push(
-        <group
-          key={`panel-${row}-${col}`}
-          position={[
-            startX + col * (gapX * scale),
-            heightOffset,
-            startZ + row * (gapZ * scale),
-          ]}
-          rotation={[-tiltAngle, 0, 0]}
-        >
-          <SolarPanel scale={scale} />
-        </group>
-      );
-    }
-  }
-
-  return <group>{panels}</group>;
-}
-
-function TransformerToBessWires({ transformerStartX, transformerZ, bessStartX, bessZ }) {
-  const transformerSpacing = 20;  // Match the transformer spacing
-  const containerSpacing = 30;    // BESS container spacing
-  
-  return (
-    <group>
-      {[0, 1, 2, 3, 4, 5].map((index) => {
-        const transformerPos = new Vector3(transformerStartX + (index * transformerSpacing), 6, transformerZ);
-        const bessPos = new Vector3(bessStartX + (index * containerSpacing), 4, bessZ);
-        
-        // Adjust control points for smoother wire routing
-        const midPoint1 = new Vector3(
-          transformerPos.x,  // Keep X aligned with transformer
-          transformerPos.y + 4,
-          transformerPos.z + 15
-        );
-        
-        const midPoint2 = new Vector3(
-          bessPos.x,
-          bessPos.y + 6,
-          bessPos.z - 10
-        );
-
-        return (
-          <group key={`transformer-bess-wire-${index}`}>
-            {/* Center wire */}
-            <Wire
-              points={[transformerPos, midPoint1, midPoint2, bessPos]}
-              radius={0.08}
-              animated={true}
-              flowDirection={1}
-            />
-            {/* Left wire */}
-            <Wire
-              points={[
-                new Vector3(transformerPos.x - 0.8, transformerPos.y, transformerPos.z),
-                new Vector3(midPoint1.x - 0.8, midPoint1.y, midPoint1.z),
-                new Vector3(midPoint2.x - 0.8, midPoint2.y, midPoint2.z),
-                new Vector3(bessPos.x - 0.8, bessPos.y, bessPos.z)
-              ]}
-              radius={0.08}
-              animated={true}
-              flowDirection={1}
-            />
-            {/* Right wire */}
-            <Wire
-              points={[
-                new Vector3(transformerPos.x + 0.8, transformerPos.y, transformerPos.z),
-                new Vector3(midPoint1.x + 0.8, midPoint1.y, midPoint1.z),
-                new Vector3(midPoint2.x + 0.8, midPoint2.y, midPoint2.z),
-                new Vector3(bessPos.x + 0.8, bessPos.y, bessPos.z)
-              ]}
-              radius={0.08}
-              animated={true}
-              flowDirection={1}
-            />
-          </group>
-        );
-      })}
-    </group>
-  );
-}
-
-export default function Platform() {
-  let isolationGroup_x_left = 62;
-  let isolationAndRackGroup_z = -65;
-  let isolationGroup_gap = 21;
+export default function Substation() {
   let transformerGroup_startX = 50;
   let transformerGroup_startZ = -30;
   let transformerGroup2_Z = 30;
@@ -528,54 +469,40 @@ export default function Platform() {
 
       <Sky sunPosition={sunPosition} />
       <mesh rotation-x={-Math.PI / 2} position={[0, 0, 0]}>
-        <planeGeometry args={[300, 360, 10]} />
+        <planeGeometry args={[300, 300, 10]} />
         <meshStandardMaterial map={texture} />
       </mesh>
 
       <HighVoltageTower startX={0} startZ={-200} />
-      <HighVoltageTower startX={0} startZ={0} />
+      {/* <HighVoltageTower startX={0} startZ={0} /> */}
 
       <SolarArray
         rows={6}
         cols={10}
-        startX={-20}
-        startZ={50}
+        startX={-100}  // Moved to left side
+        startZ={0}     // Aligned with BESS containers
         scale={1.5}
         gapX={5.5}
         gapZ={3}
       />
 
-      <HighVoltageIsolationGroup
-        x={isolationGroup_x_left}
-        z={isolationAndRackGroup_z}
-        endZ={transformerGroup_startZ - 4}
+      <SolarToTransformerWires
+        solarStartX={-80}
+        solarStartZ={0}
+        transformerStartX={transformerGroup_startX - 90}
+        transformerZ={transformerGroup_startZ}
       />
-      <HighVoltageIsolationGroup
-        x={isolationGroup_x_left - isolationGroup_gap}
-        z={isolationAndRackGroup_z}
-        endZ={transformerGroup_startZ - 4}
-      />
-      <HighVoltageIsolationGroup
-        x={isolationGroup_x_left - 2 * isolationGroup_gap}
-        z={isolationAndRackGroup_z}
-        endZ={transformerGroup_startZ - 3}
-      />
-      <HighVoltageIsolationGroup
-        x={isolationGroup_x_left - 3 * isolationGroup_gap}
-        z={isolationAndRackGroup_z}
-        endZ={transformerGroup_startZ - 3}
-      />
-      <HighVoltageIsolationGroup
-        x={isolationGroup_x_left - 4 * isolationGroup_gap}
-        z={isolationAndRackGroup_z}
-        endZ={transformerGroup_startZ - 3}
-      />
-      <HighVoltageIsolationGroup
-        x={isolationGroup_x_left - 5 * isolationGroup_gap}
-        z={isolationAndRackGroup_z}
-        endZ={transformerGroup_startZ - 3}
-      />
-      <IsolationRackGroup x={-13} z={isolationAndRackGroup_z + 5} />
+
+      {Array.from({ length: ISOLATION_GROUP_CONFIG.count }).map((_, index) => (
+        <HighVoltageIsolationGroup
+          key={`isolation-group-${index}`}
+          x={ISOLATION_GROUP_CONFIG.startX - (index * ISOLATION_GROUP_CONFIG.spacing)}
+          z={ISOLATION_GROUP_CONFIG.startZ}
+          endZ={ISOLATION_GROUP_CONFIG.transformerZ - (index < 2 ? 4 : 3)}
+        />
+      ))}
+
+      <IsolationRackGroup x={-13} z={ISOLATION_GROUP_CONFIG.startZ + 5} />
       <TransformerGroupSystem
         startX={transformerGroup_startX + 10}
         z={transformerGroup_startZ}
@@ -583,102 +510,33 @@ export default function Platform() {
       />
 
       <Rack />
-      <BessContainerGroup startX={-60} startZ={0} />
+      <BessContainerGroup 
+        startX={10} 
+        startZ={0}     // First row position
+      />
       <TransformerToBessWires
-        transformerStartX={transformerGroup_startX + 10}
+        transformerStartX={transformerGroup_startX - 90}
         transformerZ={transformerGroup_startZ}
         bessStartX={-60}
         bessZ={0}
+        flowDirection={-1}
       />
-      <TransformerGroupSystem
+      
+      {/* <TransformerGroupSystem
         startX={transformerGroup_startX + 10}
         z={transformerGroup2_Z}
         gap={20}
         flowDirection={-1}
+      /> */}
+      <Dashboard 
+        isAnimating={isAnimating}
+        onToggleAnimation={toggleAnimation}
+        onStartTour={startTour}
+        onQuickMove={() => quickMove(
+          new Vector3(-140, 110, 90),
+          new Vector3(0, 5, 0)
+        )}
       />
-      {/* <Pillar /> */}
-      <Html
-        style={{
-          position: "fixed",
-          // top: '-100px',
-          right: "20px",
-          pointerEvents: "none",
-        }}
-        fullscreen
-      >
-        <button
-          onClick={toggleAnimation}
-          style={{
-            padding: "8px 16px",
-            background: isAnimating ? "#ff4444" : "#44ff44",
-            color: "white",
-            border: "none",
-            borderRadius: "4px",
-            cursor: "pointer",
-            pointerEvents: "auto",
-          }}
-        >
-          {isAnimating ? "Stop Sun" : "Start Sun"}
-        </button>
-      </Html>
-      <Html
-        style={{
-          position: "fixed",
-          right: "40px",
-          bottom: "20px",
-          pointerEvents: "none",
-        }}
-        fullscreen
-      >
-        <button
-          onClick={startTour}
-          style={{
-            padding: "8px 16px",
-            background: "#4CAF50",
-            color: "white",
-            border: "none",
-            borderRadius: "4px",
-            cursor: "pointer",
-            pointerEvents: "auto",
-            marginLeft: "100px"
-          }}
-        >
-          Start Tour
-        </button>
-        <button
-          onClick={() => quickMove(
-            new Vector3(-140, 110, 90),
-            new Vector3(0, 5, 0)
-          )}
-          style={{
-            padding: "8px 16px",
-            background: "#2196F3",
-            color: "white",
-            border: "none",
-            borderRadius: "4px",
-            cursor: "pointer",
-            pointerEvents: "auto",
-            marginLeft: "10px"
-          }}
-        >
-          Overview
-        </button>
-      </Html>
-      <Html
-        fullscreen
-        style={{
-          position: "fixed",
-          left: "0px",
-          top: "40px",
-          // transform: "translateX(-%)",
-          // zIndex: 1000,
-        }}
-        center
-      >
-        <EquipmentStatus />
-        <BessStatus />
-        <GridStatus />
-      </Html>
     </>
   );
 }

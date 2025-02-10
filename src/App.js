@@ -1,6 +1,6 @@
 import "./App.css";
 import { Canvas } from "@react-three/fiber";
-import Platform from "./Platform";
+import Platform from "./Substation";
 
 function App() {
   return (
