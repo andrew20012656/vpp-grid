@@ -3,24 +3,18 @@ import {
   TextureLoader,
   RepeatWrapping,
   Vector3,
-  CatmullRomCurve3,
   Spherical,
 } from "three";
 import { useLoader, useFrame } from "@react-three/fiber";
-import { use, useMemo, useState, useEffect, useRef } from "react";
+import { useMemo, useState, useEffect, useRef } from "react";
 import { FBXLoader } from "three/examples/jsm/loaders/FBXLoader";
 import { TransformerGroupSystem } from "./components/TransformerSystem";
 import { Wire } from "./components/Wire";
 import { BessContainer } from "./components/BessContainer";
 import {
   Sky,
-  ContactShadows,
-  RandomizedLight,
-  AccumulativeShadows,
-  softShadows,
 } from "@react-three/drei";
 import * as THREE from "three";
-import { createRoot } from "react-dom/client";
 import "./styles.css"; // You'll need to create this file
 import EquipmentStatus from "./components/EquipmentStatus";
 import BessStatus from "./components/BessStatus";
@@ -255,13 +249,14 @@ function Rack() {
 }
 
 function BessContainerGroup({ startX, startZ }) {
-  const containerSpacingX = 30; // spacing between containers in X direction
+  const containerSpacingX = 30;
 
   return (
     <group>
       {[0, 1, 2, 3, 4, 5].map((index) => (
         <BessContainer
           key={`bess-${index}`}
+          name={`BESS Container ${index + 1}`}
           position={[startX + index * containerSpacingX, 4, startZ]}
           rotation={[0, Math.PI, 0]}
           scale={[0.01, 0.01, 0.01]}
@@ -391,6 +386,69 @@ function SolarArray({
   }
 
   return <group>{panels}</group>;
+}
+
+function TransformerToBessWires({ transformerStartX, transformerZ, bessStartX, bessZ }) {
+  const transformerSpacing = 20;  // Match the transformer spacing
+  const containerSpacing = 30;    // BESS container spacing
+  
+  return (
+    <group>
+      {[0, 1, 2, 3, 4, 5].map((index) => {
+        const transformerPos = new Vector3(transformerStartX + (index * transformerSpacing), 6, transformerZ);
+        const bessPos = new Vector3(bessStartX + (index * containerSpacing), 4, bessZ);
+        
+        // Adjust control points for smoother wire routing
+        const midPoint1 = new Vector3(
+          transformerPos.x,  // Keep X aligned with transformer
+          transformerPos.y + 4,
+          transformerPos.z + 15
+        );
+        
+        const midPoint2 = new Vector3(
+          bessPos.x,
+          bessPos.y + 6,
+          bessPos.z - 10
+        );
+
+        return (
+          <group key={`transformer-bess-wire-${index}`}>
+            {/* Center wire */}
+            <Wire
+              points={[transformerPos, midPoint1, midPoint2, bessPos]}
+              radius={0.08}
+              animated={true}
+              flowDirection={1}
+            />
+            {/* Left wire */}
+            <Wire
+              points={[
+                new Vector3(transformerPos.x - 0.8, transformerPos.y, transformerPos.z),
+                new Vector3(midPoint1.x - 0.8, midPoint1.y, midPoint1.z),
+                new Vector3(midPoint2.x - 0.8, midPoint2.y, midPoint2.z),
+                new Vector3(bessPos.x - 0.8, bessPos.y, bessPos.z)
+              ]}
+              radius={0.08}
+              animated={true}
+              flowDirection={1}
+            />
+            {/* Right wire */}
+            <Wire
+              points={[
+                new Vector3(transformerPos.x + 0.8, transformerPos.y, transformerPos.z),
+                new Vector3(midPoint1.x + 0.8, midPoint1.y, midPoint1.z),
+                new Vector3(midPoint2.x + 0.8, midPoint2.y, midPoint2.z),
+                new Vector3(bessPos.x + 0.8, bessPos.y, bessPos.z)
+              ]}
+              radius={0.08}
+              animated={true}
+              flowDirection={1}
+            />
+          </group>
+        );
+      })}
+    </group>
+  );
 }
 
 export default function Platform() {
@@ -526,7 +584,12 @@ export default function Platform() {
 
       <Rack />
       <BessContainerGroup startX={-60} startZ={0} />
-
+      <TransformerToBessWires
+        transformerStartX={transformerGroup_startX + 10}
+        transformerZ={transformerGroup_startZ}
+        bessStartX={-60}
+        bessZ={0}
+      />
       <TransformerGroupSystem
         startX={transformerGroup_startX + 10}
         z={transformerGroup2_Z}
