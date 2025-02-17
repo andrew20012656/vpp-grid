@@ -21,7 +21,7 @@ const RegionalStats = ({ regionId }) => {
   }, [regionId]);
 
   return (
-    <div className="equipment-card">
+    <div>
       <h3>Regional Grid Stats for {regionId}</h3>
       <p>Grid Frequency: {stats.frequency} Hz</p>
       <p>Current Load: {stats.currentLoad} GW</p>
