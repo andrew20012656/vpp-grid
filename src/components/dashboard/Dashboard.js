@@ -4,7 +4,7 @@ import BessStatus from "./BessStatus";
 import GridStatus from "./GridStatus";
 // import WeatherStatus from "./WeatherStatus";
 
-export function Dashboard({ isAnimating, onToggleAnimation, onStartTour, onQuickMove }) {
+export function Dashboard({ isAnimating, onToggleAnimation, onStartTour, onQuickMove, onReturnToMap }) {
   return (
     <>
       <Html
@@ -29,16 +29,6 @@ export function Dashboard({ isAnimating, onToggleAnimation, onStartTour, onQuick
         >
           {isAnimating ? "Stop Sun" : "Start Sun"}
         </button>
-      </Html>
-      <Html
-        style={{
-          position: "fixed",
-          right: "40px",
-          bottom: "20px",
-          pointerEvents: "none",
-        }}
-        fullscreen
-      >
         <button
           onClick={onStartTour}
           style={{
@@ -49,7 +39,7 @@ export function Dashboard({ isAnimating, onToggleAnimation, onStartTour, onQuick
             borderRadius: "4px",
             cursor: "pointer",
             pointerEvents: "auto",
-            marginLeft: "100px"
+            marginLeft: "10px"
           }}
         >
           Start Tour
@@ -69,16 +59,21 @@ export function Dashboard({ isAnimating, onToggleAnimation, onStartTour, onQuick
         >
           Overview
         </button>
-      </Html>
-      <Html
-        fullscreen
-        style={{
-          position: "fixed",
-          left: "0px",
-          top: "40px",
-        }}
-        center
-      >
+        <button
+          onClick={onReturnToMap}
+          style={{
+            padding: "8px 16px",
+            background: "#2196F3",
+            color: "white",
+            border: "none",
+            borderRadius: "4px",
+            cursor: "pointer",
+            pointerEvents: "auto",
+            marginLeft: "10px"
+          }}
+        >
+          Back to Map
+        </button>
         {/* <WeatherStatus /> */}
         <EquipmentStatus />
         <BessStatus />

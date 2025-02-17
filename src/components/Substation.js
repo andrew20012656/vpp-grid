@@ -1,28 +1,25 @@
-import { OrbitControls, useHelper, Html } from "@react-three/drei";
+import { OrbitControls, useHelper } from "@react-three/drei";
 import {
   TextureLoader,
   RepeatWrapping,
   Vector3,
   Spherical,
 } from "three";
-import { useLoader, useFrame } from "@react-three/fiber";
-import { useMemo, useState, useEffect, useRef } from "react";
+import { useLoader, useFrame, useThree } from "@react-three/fiber";
+import { useMemo, useState, useRef, useEffect } from "react";
 import { FBXLoader } from "three/examples/jsm/loaders/FBXLoader";
-import { TransformerGroupSystem } from "./components/TransformerSystem";
-import { Wire } from "./components/common/Wire";
-import { BessContainer } from "./components/BessContainer";
+import { TransformerGroupSystem } from "./TransformerSystem";
+import { Wire } from "./common/Wire";
+import { BessContainer } from "./BessContainer";
 import {
   Sky,
 } from "@react-three/drei";
 import * as THREE from "three";
-import "./styles.css"; // You'll need to create this file
-import EquipmentStatus from "./components/dashboard/EquipmentStatus";
-import BessStatus from "./components/dashboard/BessStatus";
-import GridStatus from './components/dashboard/GridStatus';
-import { useCameraTour } from './components/CameraTour';
-import { useAutoReset } from './hooks/useAutoReset';
-import { SolarArray } from './components/solar/SolarArray';
-import { Dashboard } from "./components/dashboard/Dashboard";
+import "./platform_style.css"; // You'll need to create this file
+import { useCameraTour } from './CameraTour';
+import { useAutoReset } from '../hooks/useAutoReset';
+import { SolarArray } from './solar/SolarArray';
+import { Dashboard } from "./dashboard/Dashboard";
 
 function HighVoltageIsolationGroup({ x, z, endZ }) {
   const fbx = useLoader(FBXLoader, "/models/isolation.FBX");
@@ -395,7 +392,7 @@ function SolarToTransformerWires({ solarStartX, solarStartZ, transformerStartX, 
   );
 }
 
-export default function Substation({ onReturnToMap }) {
+export default function Substation({ districtId, initialCameraPosition }) {
   let transformerGroup_startX = 50;
   let transformerGroup_startZ = -30;
   let transformerGroup2_Z = 30;
@@ -415,6 +412,18 @@ export default function Substation({ onReturnToMap }) {
   const [isAnimating, setIsAnimating] = useState(true);
   const { startTour, quickMove } = useCameraTour();
   const handleCameraMovement = useAutoReset(quickMove, 3000);
+
+  const { camera } = useThree()
+
+  useEffect(() => {
+    if (initialCameraPosition) {
+      camera.position.copy(initialCameraPosition.position)
+      if (initialCameraPosition.target) {
+        camera.lookAt(initialCameraPosition.target)
+      }
+      camera.updateProjectionMatrix()
+    }
+  }, [])
 
   useFrame(({ clock }) => {
     if (!isAnimating) return; // Skip animation if turned off
@@ -536,7 +545,6 @@ export default function Substation({ onReturnToMap }) {
           new Vector3(-140, 110, 90),
           new Vector3(0, 5, 0)
         )}
-        onReturnToMap={onReturnToMap}
       />
     </>
   );

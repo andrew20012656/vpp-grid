@@ -1,0 +1,56 @@
+.equipment-card {
+    background: rgba(0, 0, 0, 0.7);
+    border: 1px solid #0c76ad;
+    border-radius: 4px;
+    width: 300px;
+    padding: 15px;
+  }
+  
+  .card-title {
+    border-bottom: 1px solid #0c76ad;
+    padding-bottom: 10px;
+    margin-bottom: 15px;
+  }
+  
+  .title-content {
+    color: #fff;
+    font-size: 20px;
+    text-align: center;
+  }
+  
+  .equipment-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 15px;
+    height: 30px;
+  }
+  
+  .item-label {
+    display: flex;
+    align-items: center;
+    color: #0c76ad;
+    font-weight: bold;
+    font-size: 18px;
+  }
+  
+  .item-label img {
+    width: 42px;
+    height: 42px;
+    margin-right: 18px;
+  }
+  
+  .item-value {
+    text-align: right;
+  }
+  
+  .value-number {
+    color: #ffe641;
+    font-size: 20px;
+    /* margin-right: 5px; */
+  }
+  
+  .value-unit {
+    color: #ffe641;
+    font-size: 16px;
+  }
