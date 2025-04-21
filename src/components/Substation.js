@@ -90,33 +90,7 @@ function HighVoltageIsolationGroup({ x, z, endZ }) {
   );
 }
 
-function Pillar() {
-  const fbx = useLoader(FBXLoader, "/models/pillar.FBX");
-  return (
-    <>
-      <primitive
-        object={fbx.clone()}
-        name="pillar"
-        scale={[0.001, 0.001, 0.001]}
-        position={[0, 0, 0]}
-      />
-    </>
-  );
-}
 
-function ConnectionTubes() {
-  const fbx = useLoader(FBXLoader, "/models/pillar-group.FBX");
-  return (
-    <>
-      <primitive
-        object={fbx.clone()}
-        name="3pillar"
-        scale={[0.001, 0.001, 0.001]}
-        position={[0, 0, 0]}
-      />
-    </>
-  );
-}
 // Remove TransformerGroup and TransformerGroupSystem functions
 
 function IsolationRackGroup({ x, z }) {
@@ -272,8 +246,7 @@ function BessContainerGroup({ startX, startZ }) {
   );
 }
 
-function TransformerToBessWires({ transformerStartX, transformerZ, bessStartX, bessZ, flowDirection = 1 }) {
-  const transformerSpacing = 40;
+function TransformerToBessWires({ transformerStartX, transformerZ, flowDirection = 1 }) {
   const containerSpacingX = 30;
   const containerSpacingZ = 20;
   
@@ -392,10 +365,9 @@ function SolarToTransformerWires({ solarStartX, solarStartZ, transformerStartX, 
   );
 }
 
-export default function Substation({ districtId, initialCameraPosition }) {
+export default function Substation({ initialCameraPosition }) {
   let transformerGroup_startX = 50;
   let transformerGroup_startZ = -30;
-  let transformerGroup2_Z = 30;
   const texture = useLoader(TextureLoader, "/images/水泥地面.png");
   texture.wrapS = texture.wrapT = RepeatWrapping;
   texture.offset.set(0, 0);
